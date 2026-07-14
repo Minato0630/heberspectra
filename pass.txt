@@ -1,0 +1,54 @@
+========================================================================
+             HEBER SPECTRA 2026 - SYSTEM ACCESS CREDENTIALS
+========================================================================
+
+Use the following logins to access the various administrative, event leader,
+and student dashboard panels. Note that passwords are case-sensitive.
+
+------------------------------------------------------------------------
+1. COLLEGE COORDINATOR / ADMIN DASHBOARDS
+------------------------------------------------------------------------
+Role Select: "College Admin (President/VP/Manager)"
+Password: AdminPassword123
+
+Valid Usernames (use one of these):
+  - president
+  - vicepresident
+  - manager
+
+------------------------------------------------------------------------
+2. EVENT LEADER DASHBOARDS
+------------------------------------------------------------------------
+Role Select: "Event Leader"
+Password: leader
+
+Valid Usernames (corresponds to their respective event):
+  - leader_hackathon       (ByteCraft Hackathon)
+  - leader_adzap           (Ad-Zap Showdown)
+  - leader_coding          (CodeConquer Debug & Speed Run)
+  - leader_webdesign       (WebCraft UI/UX)
+  - leader_quiz            (MindSprint Tech Quiz)
+  - leader_treasurehunt    (CyberHunt: Cryptic Hunt)
+
+------------------------------------------------------------------------
+3. STUDENT / PARTICIPANT SIGNIN
+------------------------------------------------------------------------
+Role Select: "External College Student"
+
+Student accounts are created dynamically via the "Register" tab.
+Login Username:
+  - You can sign in using either your registered Email OR your
+    assigned Unique Student ID (e.g. BHC-STU-1001).
+Password:
+  - Use the custom password created during registration.
+
+Important Validation Rules:
+  - College Check: Signup is only allowed for OTHER colleges. 
+    "Bishop Heber College" will trigger warnings and block registration.
+  - Duplicate Check: The system checks for existing signups matching
+    the same Email, same Register Number (ReNo), or same Name + College.
+    Duplicate registrations will be rejected.
+  - Event Limit: Students are limited to a maximum of 2 event
+    registrations. Teammates must also belong to the same college and
+    be registered in the system (verifiable by their Student IDs).
+========================================================================
