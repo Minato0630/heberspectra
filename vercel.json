@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/api/database", "destination": "/api/database.js" },
+    { "source": "/api/send-email", "destination": "/api/send-email.js" },
+    { "source": "/api/(.*)", "destination": "/api/index.cjs" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
