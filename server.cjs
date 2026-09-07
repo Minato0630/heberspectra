@@ -48,7 +48,7 @@ const SMTP_CONFIG = {
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.SMTP_PORT) || 465,
   user: process.env.SMTP_USER || 'erenyeager6305@gmail.com',
-  pass: process.env.SMTP_PASS || 'sorbacotvgyabqkw'
+  pass: process.env.SMTP_PASS || 'kbgotbrtjmmlqsph'
 };
 
 app.get('/', (req, res) => {
