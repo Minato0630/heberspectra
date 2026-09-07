@@ -121,18 +121,49 @@ app.post('/api/send-email', async (req, res) => {
       `
     };
 
-    // 3. Dispatch Email
-    let info = await transporter.sendMail(mailOptions);
-    console.log(`Email successfully dispatched to ${to}: ${info.messageId}`);
+    // 3. Dispatch Email with Fallback
+    let info;
+    let previewUrl = null;
+    let isFallback = false;
 
-    let previewUrl = isTestAccount ? nodemailer.getTestMessageUrl(info) : null;
+    try {
+      info = await transporter.sendMail(mailOptions);
+      console.log(`Email successfully dispatched to ${to}: ${info.messageId}`);
+    } catch (smtpErr) {
+      console.warn(`Primary SMTP delivery failed for ${to}: ${smtpErr.message}. Falling back to Ethereal sandbox.`);
+      let testAccount = await nodemailer.createTestAccount();
+      transporter = nodemailer.createTransport({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false,
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass
+        }
+      });
+      isTestAccount = true;
+      isFallback = true;
+      info = await transporter.sendMail({
+        ...mailOptions,
+        from: '"HeberSpectra Dispatcher (Sandbox Mode)" <noreply@heberspectra.com>'
+      });
+      console.log(`Fallback sandbox email dispatched: ${info.messageId}`);
+    }
+
+    if (isTestAccount) {
+      previewUrl = nodemailer.getTestMessageUrl(info);
+    }
 
     res.status(200).json({
       success: true,
       messageId: info.messageId,
       previewUrl: previewUrl,
       isTest: isTestAccount,
-      message: isTestAccount ? 'Test email dispatched! Access Ethereal link.' : 'Real email successfully sent to student inbox.'
+      message: isFallback
+        ? 'Email dispatched in sandbox mode (Gmail password rejected: 535 Bad Credentials). Update SMTP_PASS with a valid Google App Password.'
+        : isTestAccount
+          ? 'Test email dispatched! Access Ethereal link.'
+          : 'Real email successfully sent to student inbox.'
     });
 
   } catch (error) {

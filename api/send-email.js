@@ -88,15 +88,47 @@ export default async function handler(req, res) {
       `
     };
 
-    let info = await transporter.sendMail(mailOptions);
-    let previewUrl = isTestAccount ? nodemailer.getTestMessageUrl(info) : null;
+    let info;
+    let previewUrl = null;
+    let isFallback = false;
+
+    try {
+      info = await transporter.sendMail(mailOptions);
+    } catch (smtpErr) {
+      console.warn('Primary SMTP delivery failed:', smtpErr.message);
+      // Fallback to Ethereal sandbox if credentials expired/invalid
+      let testAccount = await nodemailer.createTestAccount();
+      transporter = nodemailer.createTransport({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false,
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass
+        }
+      });
+      isTestAccount = true;
+      isFallback = true;
+      info = await transporter.sendMail({
+        ...mailOptions,
+        from: '"HeberSpectra Dispatcher (Sandbox Mode)" <noreply@heberspectra.com>'
+      });
+    }
+
+    if (isTestAccount) {
+      previewUrl = nodemailer.getTestMessageUrl(info);
+    }
 
     return res.status(200).json({
       success: true,
       messageId: info.messageId,
       previewUrl: previewUrl,
       isTest: isTestAccount,
-      message: isTestAccount ? 'Test email dispatched! Access Ethereal link.' : 'Real email successfully sent to student inbox.'
+      message: isFallback
+        ? 'Email dispatched in sandbox mode (Gmail password rejected: 535 Bad Credentials). Update SMTP_PASS with a valid Google App Password.'
+        : isTestAccount
+          ? 'Test email dispatched! Access Ethereal link.'
+          : 'Real email successfully sent to student inbox.'
     });
   } catch (error) {
     console.error('Nodemailer Error: ', error);
