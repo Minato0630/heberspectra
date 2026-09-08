@@ -29,7 +29,7 @@ const INITIAL_EVENTS = [
     desc: "Speed coding, algorithm design, and reverse engineering. Put your syntax and troubleshooting skills to the test.",
     rules: "Individual competition. No internet access allowed. Fastest correct compile wins. Standard libraries only.",
     maxTeammates: 0, // Individual
-    venue: "MCA Lab (Hall 3)",
+    venue: "Computer Science Lab (Hall 3)",
     time: "02:00 PM - Oct 12, 2026",
     incharge: "Dr. J. Ronald (+91 90012 34567)"
   },
@@ -75,7 +75,11 @@ export const AppProvider = ({ children }) => {
     events: INITIAL_EVENTS,
     registrationClosed: false,
     closedEvents: [], // Specific closed fests
-    settings: { adminPassword: "AdminPassword123" }
+    settings: {
+      adminPassword: "AdminPassword123",
+      eventDate: "2026-10-12T09:00:00",
+      registrationDeadline: "2026-10-11T23:59:59"
+    }
   });
   
   const [currentSession, setCurrentSession] = useState(() => {
@@ -102,7 +106,15 @@ export const AppProvider = ({ children }) => {
           if (!serverDb.notifications) serverDb.notifications = [];
           if (!serverDb.scans) serverDb.scans = [];
           if (!serverDb.closedEvents) serverDb.closedEvents = [];
-          if (!serverDb.settings) serverDb.settings = { adminPassword: "AdminPassword123" };
+          if (!serverDb.settings) {
+            serverDb.settings = {
+              adminPassword: "AdminPassword123",
+              eventDate: "2026-10-12T09:00:00",
+              registrationDeadline: "2026-10-11T23:59:59"
+            };
+          }
+          if (!serverDb.settings.eventDate) serverDb.settings.eventDate = "2026-10-12T09:00:00";
+          if (!serverDb.settings.registrationDeadline) serverDb.settings.registrationDeadline = "2026-10-11T23:59:59";
           if (!serverDb.events || serverDb.events.length === 0) serverDb.events = INITIAL_EVENTS;
 
           // Migrate existing events to include default rules and maxTeammates properties
@@ -438,24 +450,26 @@ export const AppProvider = ({ children }) => {
     return true;
   };
 
-  const submitPayment = (appId, txId) => {
+  const submitPayment = (appId, txId, receiptImage = null) => {
     const updatedApps = db.applications.map(app => {
       if (app.id === appId) {
         return {
           ...app,
           payment: {
             txId,
+            receiptImage,
             submittedAt: new Date().toLocaleString()
           }
         };
       }
       return app;
     });
+
     updateDB({
       ...db,
       applications: updatedApps
     });
-    addToast("Payment Logged", "Admin will verify your payment details shortly.");
+    addToast("Payment Logged", "Admin will verify your payment details and receipt shortly.");
   };
 
   // Approve payment
@@ -763,18 +777,82 @@ export const AppProvider = ({ children }) => {
     addToast("Event Deleted", `Successfully removed event ID: ${eventId}`);
   };
 
-  // Admin announcements broadcast
-  const broadcastAnnouncement = (title, body) => {
+  // Admin announcements broadcast with real email dispatch
+  const broadcastAnnouncement = async (title, body) => {
     if (db.users.length === 0) {
       addToast("Broadcast Failed", "No registered students to notify.", true);
       return;
     }
 
     let activeDb = { ...db };
-    db.users.forEach(student => {
-      activeDb = pushNotification(student.id, title, body, activeDb);
-    });
-    addToast("Broadcast Sent", `Alert dispatched to all ${db.users.length} students.`);
+    addToast("Broadcasting...", `Sending announcement and emails to ${db.users.length} participants.`);
+
+    for (const student of db.users) {
+      activeDb = pushNotification(student.id, `📢 ${title}`, body, activeDb);
+      if (student.email) {
+        const announcementEmailBody = `
+Dear ${student.name},
+
+📢 Important Announcement from HeberSpectra 2026:
+
+${title.toUpperCase()}
+--------------------------------------------------
+${body}
+
+--
+Department of Computer Science (Shift II)
+Bishop Heber College (Autonomous), Tiruchirappalli
+        `;
+        activeDb = await pushEmail(student.email, `📢 HeberSpectra Announcement: ${title}`, announcementEmailBody, null, activeDb);
+      }
+    }
+
+    updateDB(activeDb);
+    addToast("Broadcast Dispatched", `Notification and emails sent to all ${db.users.length} students.`);
+  };
+
+  // Admin Countdown Settings updater
+  const updateCountdownSettings = (eventDate, registrationDeadline) => {
+    const updated = {
+      ...db,
+      settings: {
+        ...db.settings,
+        eventDate,
+        registrationDeadline
+      }
+    };
+    updateDB(updated);
+    addToast("Countdown Updated", "Event kickoff and registration deadlines updated successfully.");
+  };
+
+  // Certificate email sender
+  const sendCertificateEmail = async (toEmail, name, eventTitle, ticketId) => {
+    const certEmailBody = `
+Dear ${name},
+
+Congratulations! Your participation in ${eventTitle} at HEBER SPECTRA 2026 has been officially verified!
+
+Your Certificate of Participation details:
+- Participant: ${name}
+- Event: ${eventTitle}
+- Certificate Validation Code: ${ticketId}
+- Department: Department of Computer Science (Shift II)
+- College: Bishop Heber College (Autonomous), Tiruchirappalli
+- Accreditation: NAAC Re-accredited at 'A++' Grade (CGPA 3.69/4)
+
+Official Endorsements:
+- Dr. G. Sobers Smiles David, Head, Dept. of Computer Science (Shift II)
+- Dr. J. Princy Merlin, Principal, Bishop Heber College
+
+You can print or download your certificate PDF anytime from your Student Portal dashboard.
+
+Warm regards,
+Event Organizing Committee
+Department of Computer Science (Shift II)
+Bishop Heber College (Autonomous)
+    `;
+    await pushEmail(toEmail, `🎓 Certificate of Participation - ${eventTitle}`, certEmailBody, `${name.replace(/\s+/g, '_')}_Certificate.pdf`);
+    addToast("Certificate Sent", `Certificate details dispatched to ${toEmail}`);
   };
 
   // Event Leader modification of specific event
@@ -819,6 +897,8 @@ export const AppProvider = ({ children }) => {
       deleteEvent,
       broadcastAnnouncement,
       updateEventDetails,
+      updateCountdownSettings,
+      sendCertificateEmail,
       generateQR,
       addToast,
       removeToast

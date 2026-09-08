@@ -91,6 +91,35 @@ nav {
   text-shadow: 0 0 20px rgba(255, 0, 85, 0.2);
 }
 
+.brand-text-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-dept-tag {
+  font-size: 0.65rem;
+  color: var(--secondary-glow);
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.mobile-nav-toggle {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--border-glow);
+  color: white;
+  font-size: 1.5rem;
+  padding: 4px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.mobile-nav-toggle:hover {
+  background: rgba(255, 0, 85, 0.2);
+  border-color: var(--primary-glow);
+}
+
 .nav-links {
   display: flex;
   gap: 20px;
@@ -146,13 +175,45 @@ nav {
 /* Hero & College Info Section */
 .hero {
   text-align: center;
-  padding: 4rem 1rem;
+  padding: 4rem 1.5rem;
   border-radius: 24px;
-  background: radial-gradient(circle at center, rgba(13, 17, 39, 0.6) 0%, rgba(5, 6, 15, 0.9) 100%);
   border: 1px solid var(--border-glow-blue);
   margin-bottom: 3rem;
   box-shadow: var(--shadow);
   position: relative;
+  overflow: hidden;
+}
+
+.hero-video-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.hero-video-bg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.38;
+  filter: brightness(0.7) saturate(1.2);
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(13, 17, 39, 0.72) 0%, rgba(5, 6, 15, 0.94) 100%);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
 }
 
 .hero-subtitle {
@@ -160,8 +221,17 @@ nav {
   text-transform: uppercase;
   font-weight: 700;
   letter-spacing: 3px;
-  font-size: 1.1rem;
-  margin-bottom: 10px;
+  font-size: 1rem;
+  margin-bottom: 6px;
+}
+
+.hero-dept {
+  color: #00ff88;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  font-size: 1.15rem;
+  margin-bottom: 12px;
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
 }
 
 .hero-title {
@@ -176,9 +246,119 @@ nav {
 
 .hero-desc {
   max-width: 800px;
-  margin: 0 auto 30px;
+  margin: 0 auto 25px;
   color: var(--text-secondary);
   font-size: 1.15rem;
+}
+
+/* Countdown Timer Widget */
+.countdown-container {
+  margin: 25px auto 10px;
+  max-width: 650px;
+  background: rgba(13, 17, 39, 0.75);
+  border: 1px solid var(--border-glow);
+  border-radius: 20px;
+  padding: 22px 18px;
+  box-shadow: 0 0 25px rgba(255, 0, 85, 0.2);
+  backdrop-filter: blur(12px);
+}
+
+.countdown-header {
+  margin-bottom: 14px;
+}
+
+.countdown-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  background: rgba(0, 204, 255, 0.15);
+  color: var(--secondary-glow);
+  border: 1px solid rgba(0, 204, 255, 0.3);
+  margin-bottom: 8px;
+}
+
+.countdown-badge.closed {
+  background: rgba(255, 51, 51, 0.15);
+  color: #ff4444;
+  border-color: rgba(255, 51, 51, 0.4);
+}
+
+.countdown-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #ffffff;
+}
+
+.countdown-sub {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.countdown-grid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 15px 0;
+}
+
+.countdown-card {
+  background: rgba(22, 28, 59, 0.85);
+  border: 1px solid var(--border-glow);
+  border-radius: 14px;
+  min-width: 75px;
+  padding: 12px 10px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.countdown-val {
+  font-size: 2.2rem;
+  font-weight: 800;
+  font-family: 'Outfit', monospace;
+  color: var(--secondary-glow);
+  line-height: 1;
+  text-shadow: 0 0 12px rgba(0, 204, 255, 0.5);
+}
+
+.countdown-lbl {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+.countdown-colon {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--primary-glow);
+  animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.deadline-notice {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 10px;
+}
+
+.deadline-alert {
+  color: #ff3333;
+  font-weight: 700;
 }
 
 .hero-info-grid {
@@ -1021,29 +1201,128 @@ footer a:hover {
   }
 }
 
-/* Mobile Responsiveness Enhancements (NEW) */
+/* Lightbox Modal for Payment Receipt Verification */
+.lightbox-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.88);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(8px);
+}
+
+.lightbox-content {
+  background: var(--panel-bg);
+  border: 2px solid var(--secondary-glow);
+  border-radius: 20px;
+  max-width: 600px;
+  width: 100%;
+  padding: 25px;
+  position: relative;
+  text-align: center;
+  box-shadow: 0 0 40px rgba(0, 204, 255, 0.4);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Table Responsive Container */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+}
+
+.table-responsive table {
+  min-width: 600px;
+}
+
+/* Auth Page Campus Background */
+.auth-page-container {
+  min-height: calc(100vh - 120px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 15px;
+  background-image: linear-gradient(rgba(5, 6, 15, 0.85), rgba(5, 6, 15, 0.94)), url('/assets/bhc_campus_bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+/* Mobile Responsiveness Enhancements */
 @media (max-width: 768px) {
   nav {
-    flex-direction: column;
-    gap: 12px;
-    padding: 1rem !important;
+    position: sticky;
+    top: 0;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0.8rem 1rem !important;
+    text-align: left !important;
+  }
+
+  .mobile-nav-toggle {
+    display: block !important;
+  }
+
+  .nav-links {
+    display: none !important;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: rgba(13, 17, 39, 0.98);
+    backdrop-filter: blur(20px);
+    border-bottom: 2px solid var(--border-glow);
+    flex-direction: column !important;
+    padding: 20px !important;
+    gap: 15px !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    z-index: 999;
+  }
+
+  .nav-links.open {
+    display: flex !important;
+  }
+
+  .nav-auth-slot {
+    margin-top: 10px;
+    width: 100%;
     text-align: center;
   }
-  .nav-links {
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
+
+  .nav-auth-slot .nav-btn {
+    width: 100%;
   }
+
+  .hero {
+    padding: 3rem 1rem !important;
+  }
+
   .hero-title {
-    font-size: 2rem !important;
+    font-size: 2.2rem !important;
   }
+
   .hero-subtitle {
     font-size: 0.85rem !important;
-    letter-spacing: 1px !important;
+    letter-spacing: 1.5px !important;
   }
+
+  .hero-dept {
+    font-size: 1rem !important;
+  }
+
   .hero-desc {
     font-size: 0.95rem !important;
   }
+
   .btn-container {
     flex-direction: column;
     gap: 10px;
@@ -1051,65 +1330,102 @@ footer a:hover {
     max-width: 280px;
     margin: 0 auto 20px;
   }
+
   .btn-primary, .btn-secondary {
     width: 100%;
     text-align: center;
   }
+
   .dashboard-grid {
     grid-template-columns: 1fr !important;
     gap: 15px;
   }
+
   .sidebar {
     flex-direction: row !important;
     overflow-x: auto;
     padding: 10px !important;
     gap: 8px !important;
     white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
   }
+
   .sidebar-title {
     display: none !important;
   }
+
   .sidebar-item {
     padding: 8px 12px !important;
     font-size: 0.8rem !important;
     display: inline-block !important;
     flex-shrink: 0;
   }
+
   .dashboard-content {
     padding: 15px !important;
     min-height: auto !important;
   }
+
+  .form-row {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
   .certificate:not(.pdf-force-desktop) {
     padding: 20px 10px !important;
     border-width: 6px !important;
   }
+
   .certificate:not(.pdf-force-desktop) .cert-title {
     font-size: 1.1rem !important;
     letter-spacing: 0.5px !important;
   }
+
   .certificate:not(.pdf-force-desktop) .cert-subtitle {
     font-size: 0.65rem !important;
     letter-spacing: 1px !important;
     margin-bottom: 12px !important;
   }
+
   .certificate:not(.pdf-force-desktop) .cert-text {
     font-size: 0.8rem !important;
     margin-bottom: 12px !important;
   }
+
   .certificate:not(.pdf-force-desktop) .cert-name {
     font-size: 1.2rem !important;
     margin-bottom: 12px !important;
   }
+
   .certificate:not(.pdf-force-desktop) .cert-details {
     font-size: 1rem !important;
   }
+
   .certificate:not(.pdf-force-desktop) .cert-signatures {
     flex-direction: column !important;
     gap: 15px !important;
     align-items: center;
   }
+
   .certificate-preview-box {
     padding: 10px 0 !important;
+  }
+
+  .countdown-card {
+    min-width: 60px !important;
+    padding: 10px 6px !important;
+  }
+
+  .countdown-val {
+    font-size: 1.6rem !important;
+  }
+
+  .countdown-lbl {
+    font-size: 0.65rem !important;
+  }
+
+  .countdown-colon {
+    font-size: 1.4rem !important;
   }
 }
 
@@ -1125,10 +1441,43 @@ footer a:hover {
   .event-grid {
     grid-template-columns: 1fr !important;
   }
+
   .event-card {
     padding: 15px !important;
   }
+
   .stats-grid {
     grid-template-columns: 1fr !important;
   }
+
+  .countdown-grid {
+    gap: 6px !important;
+  }
+
+  .countdown-card {
+    min-width: 52px !important;
+    padding: 8px 4px !important;
+  }
+
+  .countdown-val {
+    font-size: 1.4rem !important;
+  }
+
+  .countdown-colon {
+    font-size: 1.2rem !important;
+  }
+
+  .countdown-title {
+    font-size: 1.15rem !important;
+  }
+
+  .auth-container {
+    padding: 15px !important;
+    border-radius: 16px !important;
+  }
+
+  .nav-title {
+    font-size: 1.2rem !important;
+  }
 }
+

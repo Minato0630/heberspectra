@@ -11,7 +11,28 @@ export default function App() {
   // Modal states
   const [paymentAppId, setPaymentAppId] = useState(null);
   const [paymentTxId, setPaymentTxId] = useState('');
+  const [paymentReceiptImg, setPaymentReceiptImg] = useState('');
+  const [lightboxReceipt, setLightboxReceipt] = useState(null);
   const [certData, setCertData] = useState(null);
+  
+  // Mobile navigation drawer state
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Live countdown state
+  const [countdown, setCountdown] = useState({
+    days: '00',
+    hours: '00',
+    minutes: '00',
+    seconds: '00',
+    isEventStarted: false,
+    isRegClosed: false
+  });
+
+  // Admin Countdown Settings Form state
+  const [adminCountdownForm, setAdminCountdownForm] = useState({
+    eventDate: '2026-10-12T09:00:00',
+    registrationDeadline: '2026-10-11T23:59:59'
+  });
   
   // Scan verify popup modal state
   const [scanVerifyData, setScanVerifyData] = useState(null);
@@ -58,6 +79,8 @@ export default function App() {
     addEvent,
     deleteEvent,
     broadcastAnnouncement,
+    updateCountdownSettings,
+    sendCertificateEmail,
     updateEventDetails,
     generateQR,
     addToast,
@@ -106,6 +129,60 @@ export default function App() {
       }
     }
   }, [currentSession, leaderTab, db.events]);
+
+  // Sync admin countdown form with DB settings
+  useEffect(() => {
+    if (db.settings?.eventDate || db.settings?.registrationDeadline) {
+      setAdminCountdownForm({
+        eventDate: db.settings.eventDate || '2026-10-12T09:00:00',
+        registrationDeadline: db.settings.registrationDeadline || '2026-10-11T23:59:59'
+      });
+    }
+  }, [db.settings]);
+
+  // Real-time Countdown Timer effect
+  useEffect(() => {
+    const calculateTime = () => {
+      const eventDateStr = db.settings?.eventDate || '2026-10-12T09:00:00';
+      const regDeadlineStr = db.settings?.registrationDeadline || '2026-10-11T23:59:59';
+      const now = new Date().getTime();
+      const eventTime = new Date(eventDateStr).getTime();
+      const regTime = new Date(regDeadlineStr).getTime();
+
+      const diff = eventTime - now;
+      const isEventStarted = diff <= 0;
+      const isRegClosed = now >= regTime || db.registrationClosed;
+
+      if (diff <= 0) {
+        setCountdown({
+          days: '00',
+          hours: '00',
+          minutes: '00',
+          seconds: '00',
+          isEventStarted: true,
+          isRegClosed
+        });
+      } else {
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        setCountdown({
+          days: String(days).padStart(2, '0'),
+          hours: String(hours).padStart(2, '0'),
+          minutes: String(minutes).padStart(2, '0'),
+          seconds: String(seconds).padStart(2, '0'),
+          isEventStarted: false,
+          isRegClosed
+        });
+      }
+    };
+
+    calculateTime();
+    const interval = setInterval(calculateTime, 1000);
+    return () => clearInterval(interval);
+  }, [db.settings, db.registrationClosed]);
 
   // Submit Schedule Reschedule
   const handleScheduleSubmit = (e) => {
@@ -309,11 +386,38 @@ export default function App() {
     }
   };
 
+  const handlePaymentReceiptUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        addToast("File Too Large", "Payment screenshot must be under 2MB.", true);
+        e.target.value = "";
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        setPaymentReceiptImg(evt.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handlePaymentSubmit = (e) => {
     e.preventDefault();
-    submitPayment(paymentAppId, paymentTxId);
+    if (!paymentReceiptImg) {
+      addToast("Receipt Required", "Please upload a screenshot of your payment transfer.", true);
+      return;
+    }
+    submitPayment(paymentAppId, paymentTxId, paymentReceiptImg);
     setPaymentAppId(null);
     setPaymentTxId('');
+    setPaymentReceiptImg('');
+  };
+
+  // Admin Countdown Timers Save
+  const handleAdminCountdownSubmit = async (e) => {
+    e.preventDefault();
+    await updateCountdownSettings(adminCountdownForm.eventDate, adminCountdownForm.registrationDeadline);
   };
 
   // Admin New Event Form Submit
@@ -427,29 +531,40 @@ export default function App() {
 
       {/* Navbar Header */}
       <nav>
-        <div className="nav-brand" onClick={() => setCurrentPage('home')}>
+        <div className="nav-brand" onClick={() => { setCurrentPage('home'); setMobileMenuOpen(false); }}>
           <img src="/logo.png" alt="Spectra" />
-          <span className="nav-title">HeberSpectra '26</span>
+          <div>
+            <span className="nav-title">HeberSpectra '26</span>
+            <span style={{ fontSize: '0.68rem', color: 'var(--primary-glow)', display: 'block', letterSpacing: '0.5px', fontWeight: 600 }}>
+              Dept. of Computer Science (Shift II)
+            </span>
+          </div>
         </div>
         
-        <div className="nav-links">
-          <span className={`nav-item ${currentPage === 'home' ? 'active' : ''}`} onClick={() => setCurrentPage('home')}>Catalog</span>
+        <div className="mobile-nav-toggle" onClick={() => setMobileMenuOpen(prev => !prev)}>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+
+        <div className={`nav-links ${mobileMenuOpen ? 'active' : ''}`}>
+          <span className={`nav-item ${currentPage === 'home' ? 'active' : ''}`} onClick={() => { setCurrentPage('home'); setMobileMenuOpen(false); }}>Catalog</span>
           {currentSession?.role === 'student' && (
-            <span className={`nav-item ${currentPage === 'student-dashboard' ? 'active' : ''}`} onClick={() => setCurrentPage('student-dashboard')}>My Portal</span>
+            <span className={`nav-item ${currentPage === 'student-dashboard' ? 'active' : ''}`} onClick={() => { setCurrentPage('student-dashboard'); setMobileMenuOpen(false); }}>My Portal</span>
           )}
           {currentSession?.role === 'admin' && (
-            <span className={`nav-item ${currentPage === 'admin-dashboard' ? 'active' : ''}`} onClick={() => setCurrentPage('admin-dashboard')}>Admin Panel</span>
+            <span className={`nav-item ${currentPage === 'admin-dashboard' ? 'active' : ''}`} onClick={() => { setCurrentPage('admin-dashboard'); setMobileMenuOpen(false); }}>Admin Panel</span>
           )}
           {currentSession?.role === 'leader' && (
-            <span className={`nav-item ${currentPage === 'leader-dashboard' ? 'active' : ''}`} onClick={() => setCurrentPage('leader-dashboard')}>Leader Panel</span>
+            <span className={`nav-item ${currentPage === 'leader-dashboard' ? 'active' : ''}`} onClick={() => { setCurrentPage('leader-dashboard'); setMobileMenuOpen(false); }}>Leader Panel</span>
           )}
         </div>
 
         <div>
           {currentSession ? (
-            <button className="nav-btn" onClick={logoutUser}>Logout ({currentSession.name})</button>
+            <button className="nav-btn" onClick={() => { logoutUser(); setMobileMenuOpen(false); }}>Logout ({currentSession.name})</button>
           ) : (
-            <button className="nav-btn" onClick={() => setCurrentPage('auth-page')}>Student/Admin Sign In</button>
+            <button className="nav-btn" onClick={() => { setCurrentPage('auth-page'); setMobileMenuOpen(false); }}>Student/Admin Sign In</button>
           )}
         </div>
       </nav>
@@ -457,37 +572,90 @@ export default function App() {
       {/* Dynamic Views Router */}
       <div style={{ flex: 1 }}>
 
-        {/* 1. HOME CATALOG (Prize details removed, Rules & Team size added) */}
+        {/* 1. HOME CATALOG */}
         {currentPage === 'home' && (
           <main className="page-section">
-            <div className="hero">
-              <div className="hero-subtitle">BISHOP HEBER COLLEGE (AUTONOMOUS) PRESENTS</div>
-              <div className="hero-title">HEBER SPECTRA 2026</div>
-              <p className="hero-desc">
-                Welcome to the annual Inter-Collegiate Cultural and Technical Fest conducted by Bishop Heber College, Tiruchirappalli. 
-                Unleash your creativity, coding prowess, and marketing brilliance in a series of highly competitive technical challenges.
-              </p>
-              
-              <div className="btn-container">
-                <button className="btn-primary" onClick={() => setCurrentPage('auth-page')}>Register Now</button>
-                <a href="#events-catalog" className="btn-secondary" style={{ textDecoration: 'none', lineHeight: '2.4', display: 'inline-block' }}>Explore Events</a>
-              </div>
+            <div className="hero-video-wrapper">
+              <video autoPlay loop muted playsInline className="hero-video-bg" poster="/assets/bhc_campus_bg.jpg">
+                <source src="/assets/bhc_campus_video.webm" type="video/webm" />
+                <source src="https://bhc.edu.in/assets/home/bhc_intro_new.webm" type="video/webm" />
+              </video>
+              <div className="hero-overlay"></div>
+              <div className="hero" style={{ position: 'relative', zIndex: 2, background: 'transparent' }}>
+                <div className="hero-dept" style={{ color: 'var(--secondary-glow)', fontWeight: 800, letterSpacing: '2px', fontSize: '0.9rem', marginBottom: '8px', textTransform: 'uppercase' }}>
+                  DEPARTMENT OF COMPUTER SCIENCE (SHIFT II)
+                </div>
+                <div className="hero-subtitle">BISHOP HEBER COLLEGE (AUTONOMOUS) PRESENTS</div>
+                <div className="hero-title">HEBER SPECTRA 2026</div>
+                <p className="hero-desc">
+                  Welcome to the premier Inter-Collegiate Cultural and Technical Fest organized by the Department of Computer Science (Shift II), Bishop Heber College, Tiruchirappalli. 
+                  Unleash your creativity, coding prowess, and technical innovation in an elite battle of minds.
+                </p>
+                
+                {/* Live Countdown Timer */}
+                <div className="countdown-container">
+                  <div className="countdown-title">
+                    {countdown.isEventStarted ? "🎉 FEST IS LIVE NOW!" : "⏳ COUNTDOWN TO HEBER SPECTRA 2026"}
+                  </div>
+                  {!countdown.isEventStarted && (
+                    <div className="countdown-grid">
+                      <div className="countdown-card">
+                        <div className="countdown-number">{countdown.days}</div>
+                        <div className="countdown-label">Days</div>
+                      </div>
+                      <div className="countdown-card">
+                        <div className="countdown-number">{countdown.hours}</div>
+                        <div className="countdown-label">Hours</div>
+                      </div>
+                      <div className="countdown-card">
+                        <div className="countdown-number">{countdown.minutes}</div>
+                        <div className="countdown-label">Minutes</div>
+                      </div>
+                      <div className="countdown-card">
+                        <div className="countdown-number">{countdown.seconds}</div>
+                        <div className="countdown-label">Seconds</div>
+                      </div>
+                    </div>
+                  )}
+                  <div className="countdown-deadline" style={{ marginTop: '12px', fontSize: '0.85rem' }}>
+                    {countdown.isRegClosed ? (
+                      <span style={{ color: '#ff3333', fontWeight: 'bold' }}>⚠️ Registrations are Closed!</span>
+                    ) : (
+                      <span style={{ color: 'var(--secondary-glow)' }}>
+                        Registration Closes: {new Date(db.settings?.registrationDeadline || '2026-10-11T23:59:59').toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                </div>
 
-              <div className="hero-info-grid">
-                <div className="hero-info-card">
-                  <h4>Institution</h4>
-                  <p>Bishop Heber College</p>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Tiruchirappalli</span>
+                <div className="btn-container" style={{ marginTop: '20px' }}>
+                  <button 
+                    className="btn-primary" 
+                    disabled={countdown.isRegClosed || db.registrationClosed}
+                    onClick={() => setCurrentPage('auth-page')}
+                    style={(countdown.isRegClosed || db.registrationClosed) ? { opacity: 0.5, cursor: 'not-allowed', backgroundColor: '#666' } : {}}
+                  >
+                    {(countdown.isRegClosed || db.registrationClosed) ? 'Registrations Closed' : 'Register Now'}
+                  </button>
+                  <a href="#events-catalog" className="btn-secondary" style={{ textDecoration: 'none', lineHeight: '2.4', display: 'inline-block' }}>Explore Events</a>
                 </div>
-                <div className="hero-info-card">
-                  <h4>Fest Date</h4>
-                  <p>October 12 & 13</p>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>2026</span>
-                </div>
-                <div className="hero-info-card">
-                  <h4>Eligibility</h4>
-                  <p>Other Colleges Only</p>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>BHC Students Excluded</span>
+
+                <div className="hero-info-grid">
+                  <div className="hero-info-card">
+                    <h4>Department</h4>
+                    <p>Computer Science (Shift II)</p>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Bishop Heber College</span>
+                  </div>
+                  <div className="hero-info-card">
+                    <h4>Fest Date</h4>
+                    <p>October 12 & 13</p>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>2026</span>
+                  </div>
+                  <div className="hero-info-card">
+                    <h4>Eligibility</h4>
+                    <p>Other Colleges Only</p>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>BHC Students Excluded</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -547,11 +715,12 @@ export default function App() {
 
         {/* 2. AUTH PAGE (Login & signup with Base64 FileReader uploader) */}
         {currentPage === 'auth-page' && (
-          <section className="page-section">
-            <div className="section-header">
-              <h2>Access Control Terminal</h2>
-              <p>Sign up to participate or sign in to access your dashboard panel</p>
-            </div>
+          <div className="auth-page-container">
+            <section className="page-section">
+              <div className="section-header">
+                <h2>Access Control Terminal</h2>
+                <p>Sign up to participate or sign in to access your dashboard panel</p>
+              </div>
 
             <div className="auth-container">
               <div className="auth-tabs">
@@ -660,7 +829,8 @@ export default function App() {
               )}
             </div>
           </section>
-        )}
+        </div>
+      )}
 
         {/* 3. STUDENT DASHBOARD */}
         {currentPage === 'student-dashboard' && currentSession?.role === 'student' && (
@@ -1117,10 +1287,41 @@ export default function App() {
                                   </td>
                                   <td>
                                     {app.payment ? (
-                                      <>
-                                        <span style={{ color: '#00ff88', fontSize: '0.85rem' }}>TxID: {app.payment.txId}</span><br />
-                                        <span style={{ fontSize: '0.75rem', textDecoration: 'underline', color: 'var(--secondary-glow)', cursor: 'pointer' }} onClick={() => alert(`[Mock Payment Gateway View]\nTransaction ID: ${app.payment.txId}\nStatus: Verified\nReceipt: receipt_screenshot.png`)}>View Screenshot</span>
-                                      </>
+                                      <div>
+                                        <span style={{ color: '#00ff88', fontSize: '0.85rem', fontFamily: 'monospace' }}>TxID: {app.payment.txId}</span>
+                                        {app.payment.receiptImage ? (
+                                          <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <img 
+                                              src={app.payment.receiptImage} 
+                                              alt="Receipt" 
+                                              style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--secondary-glow)', cursor: 'pointer' }}
+                                              onClick={() => setLightboxReceipt({
+                                                img: app.payment.receiptImage,
+                                                txId: app.payment.txId,
+                                                studentName: student.name,
+                                                college: student.college,
+                                                eventTitle: eventDetails.title,
+                                                time: app.payment.timestamp
+                                              })}
+                                            />
+                                            <span 
+                                              style={{ fontSize: '0.75rem', textDecoration: 'underline', color: 'var(--secondary-glow)', cursor: 'pointer' }}
+                                              onClick={() => setLightboxReceipt({
+                                                img: app.payment.receiptImage,
+                                                txId: app.payment.txId,
+                                                studentName: student.name,
+                                                college: student.college,
+                                                eventTitle: eventDetails.title,
+                                                time: app.payment.timestamp
+                                              })}
+                                            >
+                                              View Proof
+                                            </span>
+                                          </div>
+                                        ) : (
+                                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>No receipt image</div>
+                                        )}
+                                      </div>
                                     ) : (
                                       <span style={{ color: '#ffaa00', fontSize: '0.85rem' }}>No payment uploaded</span>
                                     )}
@@ -1325,6 +1526,36 @@ export default function App() {
                           Status: {db.registrationClosed ? 'CLOSED' : 'OPEN'}
                         </span>
                       </div>
+                    </div>
+
+                    <div className="info-box" style={{ marginBottom: '25px', borderLeft: '4px solid var(--secondary-glow)' }}>
+                      <h4>Event Kickoff & Registration Countdown Settings</h4>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '15px' }}>
+                        Configure the live countdown timer on the Home Catalog and set the automated registration deadline. Saved to MongoDB Atlas database.
+                      </p>
+                      <form onSubmit={handleAdminCountdownSubmit} style={{ maxWidth: '500px' }}>
+                        <div className="form-group">
+                          <label>Festival Event Start Date & Time</label>
+                          <input 
+                            type="datetime-local" 
+                            className="form-control" 
+                            value={adminCountdownForm.eventDate} 
+                            onChange={(e) => setAdminCountdownForm(prev => ({ ...prev, eventDate: e.target.value }))} 
+                            required 
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Registration Closure Deadline</label>
+                          <input 
+                            type="datetime-local" 
+                            className="form-control" 
+                            value={adminCountdownForm.registrationDeadline} 
+                            onChange={(e) => setAdminCountdownForm(prev => ({ ...prev, registrationDeadline: e.target.value }))} 
+                            required 
+                          />
+                        </div>
+                        <button type="submit" className="btn-primary" style={{ padding: '8px 18px' }}>Save Countdown Timers</button>
+                      </form>
                     </div>
                   </div>
                 )}
@@ -1583,14 +1814,14 @@ export default function App() {
       {/* Payment Proof Modal */}
       {paymentAppId && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', zIndex: 1000, backdropFilter: 'blur(5px)' }}>
-          <div style={{ background: 'var(--panel-bg)', border: '1px solid var(--border-glow)', borderRadius: '20px', width: '100%', maxWidth: '480px', margin: '10% auto', padding: '30px', boxShadow: 'var(--shadow)', position: 'relative' }}>
-            <span style={{ position: 'absolute', top: '15px', right: '20px', fontSize: '1.8rem', cursor: 'pointer', color: 'var(--text-secondary)' }} onClick={() => setPaymentAppId(null)}>&times;</span>
+          <div style={{ background: 'var(--panel-bg)', border: '1px solid var(--border-glow)', borderRadius: '20px', width: '100%', maxWidth: '480px', margin: '8% auto', padding: '30px', boxShadow: 'var(--shadow)', position: 'relative' }}>
+            <span style={{ position: 'absolute', top: '15px', right: '20px', fontSize: '1.8rem', cursor: 'pointer', color: 'var(--text-secondary)' }} onClick={() => { setPaymentAppId(null); setPaymentReceiptImg(''); }}>&times;</span>
             
             <h3 style={{ marginBottom: '10px' }}>Submit Registration Payment</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
               Application ID: <strong style={{ color: 'var(--secondary-glow)' }}>{paymentAppId}</strong><br />
               Please transfer the event fee to the college account: <strong>BHC-SPECTRA-SBI-00998877</strong>.<br />
-              Upload screenshot and submit details below.
+              Upload payment screenshot (GPay / PhonePe / Bank transfer) and enter Transaction ID.
             </p>
 
             <form onSubmit={handlePaymentSubmit}>
@@ -1599,10 +1830,16 @@ export default function App() {
                 <input type="text" className="form-control" placeholder="TXN1098273612" value={paymentTxId} onChange={(e) => setPaymentTxId(e.target.value)} required />
               </div>
               <div className="form-group">
-                <label>Upload Payment Receipt Screenshot (Simulation)</label>
-                <input type="file" className="form-control" accept="image/*" required />
+                <label>Upload Payment Receipt Screenshot</label>
+                <input type="file" className="form-control" accept="image/*" onChange={handlePaymentReceiptUpload} required />
+                {paymentReceiptImg && (
+                  <div style={{ marginTop: '10px', textAlign: 'center' }}>
+                    <img src={paymentReceiptImg} alt="Receipt Preview" style={{ maxHeight: '120px', borderRadius: '8px', border: '1px solid var(--border-glow)' }} />
+                    <p style={{ fontSize: '0.75rem', color: '#00ff88', marginTop: '4px' }}>✓ Screenshot selected</p>
+                  </div>
+                )}
               </div>
-              <button type="submit" className="btn-primary" style={{ width: '100%' }}>Submit Payment Proof</button>
+              <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '10px' }}>Submit Payment Proof</button>
             </form>
           </div>
         </div>
@@ -1619,9 +1856,9 @@ export default function App() {
                 <div className="certificate-border">
                   <img className="cert-logo" src="/logo.png" alt="Logo" />
                   <div className="cert-title">BISHOP HEBER COLLEGE (AUTONOMOUS)</div>
-                  <div className="cert-subtitle">Nationally Re-accredited at 'A+' Grade by NAAC | Tiruchirappalli, Tamil Nadu</div>
+                  <div className="cert-subtitle">Nationally Re-accredited at 'A++' Grade by NAAC (CGPA 3.69/4) | Tiruchirappalli, Tamil Nadu</div>
                   <div style={{ fontSize: '1.5rem', marginTop: '20px', fontWeight: 600, color: 'white' }}>HEBER SPECTRA 2026</div>
-                  <div className="cert-subtitle" style={{ color: 'var(--primary-glow)', marginBottom: '20px' }}>Inter-Collegiate Cultural & Technical Meet</div>
+                  <div className="cert-subtitle" style={{ color: 'var(--primary-glow)', marginBottom: '20px' }}>Department of Computer Science (Shift II)</div>
                   <div className="cert-text">This is to certify that</div>
                   <div className="cert-name">{certData.name}</div>
                   <div className="cert-text">of other college participant has successfully attended and participated in the event</div>
@@ -1629,12 +1866,12 @@ export default function App() {
                   
                   <div className="cert-signatures">
                     <div className="cert-sig">
-                      <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'white' }}>Dr. J. G. R. Sathiaseelan</span>
-                      <span>Head, Dept of MCA</span>
+                      <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'white' }}>Dr. G. Sobers Smiles David</span>
+                      <span>Head, Dept. of Computer Science (Shift II)</span>
                     </div>
                     <div className="cert-sig">
-                      <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'white' }}>Dr. D. Paul Dhayabaran</span>
-                      <span>Principal, BHC</span>
+                      <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'white' }}>Dr. J. Princy Merlin</span>
+                      <span>Principal, Bishop Heber College</span>
                     </div>
                   </div>
                   <div className="cert-id">Validation ID: {certData.ticketId}</div>
@@ -1642,9 +1879,45 @@ export default function App() {
               </div>
             </div>
             
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginTop: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginTop: '20px', flexWrap: 'wrap' }}>
               <button className="btn-primary" onClick={() => downloadCertificatePDF(certData.name, certData.event)}>Download Certificate PDF</button>
+              {studentDetails?.email && (
+                <button 
+                  className="btn-primary" 
+                  style={{ background: 'linear-gradient(135deg, #00ccff, #0077ff)' }} 
+                  onClick={async () => {
+                    const sent = await sendCertificateEmail(studentDetails.email, certData.name, certData.event, certData.ticketId);
+                    if (sent) addToast("Certificate Sent", `Official certificate dispatched to ${studentDetails.email}`);
+                  }}
+                >
+                  ✉️ Email Certificate to Me
+                </button>
+              )}
               <button className="btn-secondary" onClick={() => setCertData(null)}>Close Certificate</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox for Payment Receipt Verification */}
+      {lightboxReceipt && (
+        <div className="lightbox-overlay" onClick={() => setLightboxReceipt(null)}>
+          <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
+            <button className="lightbox-close" onClick={() => setLightboxReceipt(null)}>&times;</button>
+            <h3 style={{ color: 'var(--secondary-glow)', marginBottom: '8px' }}>Payment Transfer Screenshot Proof</h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '15px' }}>
+              Student: <strong>{lightboxReceipt.studentName}</strong> ({lightboxReceipt.college}) | Event: <strong>{lightboxReceipt.eventTitle}</strong><br />
+              TxID: <strong style={{ color: '#00ff88', fontFamily: 'monospace' }}>{lightboxReceipt.txId}</strong>
+            </p>
+            <div style={{ textAlign: 'center', background: 'rgba(0,0,0,0.5)', padding: '15px', borderRadius: '12px' }}>
+              <img 
+                src={lightboxReceipt.img} 
+                alt="Payment Proof" 
+                style={{ maxWidth: '100%', maxHeight: '65vh', objectFit: 'contain', borderRadius: '8px' }} 
+              />
+            </div>
+            <div style={{ marginTop: '15px', textAlign: 'center' }}>
+              <button className="btn-secondary" onClick={() => setLightboxReceipt(null)}>Close Receipt Preview</button>
             </div>
           </div>
         </div>
@@ -1653,8 +1926,8 @@ export default function App() {
       {/* Footer Section */}
       <footer style={{ marginTop: 'auto' }}>
         <p>&copy; 2026 Bishop Heber College (Autonomous), Trichy. All Rights Reserved.</p>
-        <p style={{ fontSize: '0.8rem', marginTop: '5px', color: 'rgba(255,255,255,0.3)' }}>
-          Conducted by the Department of Computer Applications (MCA) | Web Design by Antigravity AI
+        <p style={{ fontSize: '0.8rem', marginTop: '5px', color: 'rgba(255,255,255,0.4)' }}>
+          Organized by the Department of Computer Science (Shift II) | Bishop Heber College (Autonomous)
         </p>
       </footer>
 
