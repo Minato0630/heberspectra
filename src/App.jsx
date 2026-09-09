@@ -344,6 +344,7 @@ export default function App() {
   const [loginRole, setLoginRole] = useState('student');
   const [authTab, setAuthTab] = useState('login');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -784,8 +785,24 @@ export default function App() {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Password</label>
-                    <input type="password" className="form-control" placeholder="••••••••" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label>Password</label>
+                      <button 
+                        type="button" 
+                        onClick={() => setShowLoginPassword(!showLoginPassword)}
+                        style={{ background: 'none', border: 'none', color: 'var(--secondary-glow)', cursor: 'pointer', fontSize: '0.78rem', padding: '0 4px' }}
+                      >
+                        {showLoginPassword ? "👁️ Hide" : "👁️ Show"}
+                      </button>
+                    </div>
+                    <input 
+                      type={showLoginPassword ? "text" : "password"} 
+                      className="form-control" 
+                      placeholder="••••••••" 
+                      value={loginPassword} 
+                      onChange={(e) => setLoginPassword(e.target.value)} 
+                      required 
+                    />
                     <div style={{
                       marginTop: '8px',
                       padding: '10px 12px',
@@ -797,11 +814,49 @@ export default function App() {
                       color: 'var(--text-secondary)'
                     }}>
                       <div style={{ color: 'var(--secondary-glow)', fontWeight: '600', marginBottom: '3px' }}>
-                        🔑 System Access Credentials:
+                        🔑 Instant 1-Click Fill Credentials:
                       </div>
-                      <div>👑 <strong>Admin:</strong> <code>president</code> (or <code>admin</code>) &nbsp;|&nbsp; Pass: <code>AdminPassword123</code></div>
-                      <div>🎯 <strong>Leader:</strong> <code>leader_hackathon</code> &nbsp;|&nbsp; Pass: <code>leader</code></div>
-                      <div>🎓 <strong>Student:</strong> your registered email / ID &amp; password</div>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', margin: '6px 0' }}>
+                        <button 
+                          type="button" 
+                          className="btn-outline" 
+                          style={{ fontSize: '0.75rem', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                          onClick={() => {
+                            setLoginRole('admin');
+                            setLoginEmail('president');
+                            setLoginPassword('AdminPassword123');
+                          }}
+                        >
+                          👑 Fill Admin
+                        </button>
+                        <button 
+                          type="button" 
+                          className="btn-outline" 
+                          style={{ fontSize: '0.75rem', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                          onClick={() => {
+                            setLoginRole('leader');
+                            setLoginEmail('leader_hackathon');
+                            setLoginPassword('leader');
+                          }}
+                        >
+                          🎯 Fill Leader
+                        </button>
+                        <button 
+                          type="button" 
+                          className="btn-outline" 
+                          style={{ fontSize: '0.75rem', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                          onClick={() => {
+                            setLoginRole('student');
+                            setLoginEmail('pandiyagokul@gmail.com');
+                            setLoginPassword('123456');
+                          }}
+                        >
+                          🎓 Fill Student
+                        </button>
+                      </div>
+                      <div style={{ fontSize: '0.75rem', opacity: 0.85 }}>
+                        Admin: <code>president</code> (Pass: <code>AdminPassword123</code> or <code>admin</code>)
+                      </div>
                     </div>
                   </div>
                   <button type="submit" className="btn-primary" disabled={isLoggingIn} style={{ width: '100%', padding: '12px', marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>

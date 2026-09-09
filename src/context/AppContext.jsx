@@ -236,8 +236,11 @@ export const AppProvider = ({ children }) => {
         };
         sessionStorage.setItem("spectra_session", JSON.stringify(session));
         setCurrentSession(session);
-        addToast("Welcome Back!", `Signed in successfully as ${session.name}.`);
-        await refreshRoleData(session);
+        try {
+          await refreshRoleData(session);
+        } catch (err) {
+          console.warn("Post-login data refresh error:", err);
+        }
         return resolvedRole;
       } else {
         const msg = data.error?.message || "Invalid credentials.";
