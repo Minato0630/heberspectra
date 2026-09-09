@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
   res.setHeader(
     'Access-Control-Allow-Headers',
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
@@ -15,29 +15,12 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (req.method === 'GET') {
-    try {
-      const data = await readDB();
-      return res.status(200).json(data);
-    } catch (e) {
-      console.error('API /database GET error:', e);
-      return res.status(500).json({ error: e.message });
+  // Phase 3 Security Fix: Direct full database dumping and overwriting is permanently disabled.
+  return res.status(403).json({
+    success: false,
+    error: {
+      code: 'FORBIDDEN',
+      message: 'Direct database access is permanently disabled for security. Please use authenticated API endpoints.'
     }
-  }
-
-  if (req.method === 'POST') {
-    try {
-      const success = await writeDB(req.body);
-      if (success) {
-        return res.status(200).json({ success: true });
-      } else {
-        return res.status(500).json({ success: false, error: 'Database write failed' });
-      }
-    } catch (e) {
-      console.error('API /database POST error:', e);
-      return res.status(500).json({ success: false, error: e.message });
-    }
-  }
-
-  return res.status(405).json({ error: 'Method Not Allowed' });
+  });
 }

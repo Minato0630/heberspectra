@@ -185,17 +185,17 @@ export default function App() {
   }, [db.settings, db.registrationClosed]);
 
   // Submit Schedule Reschedule
-  const handleScheduleSubmit = (e) => {
+  const handleScheduleSubmit = async (e) => {
     e.preventDefault();
-    updateSchedule(scheduleEventId, scheduleVenue, scheduleTime);
+    await updateSchedule(scheduleEventId, scheduleVenue, scheduleTime);
     setScheduleVenue('');
     setScheduleTime('');
   };
 
   // Submit Leader Event Update
-  const handleLeaderEventUpdateSubmit = (e) => {
+  const handleLeaderEventUpdateSubmit = async (e) => {
     e.preventDefault();
-    updateEventDetails(currentSession.eventId, leaderEventForm);
+    await updateEventDetails(currentSession.eventId, leaderEventForm);
   };
 
   // Cleanup scanner on page shifts
@@ -295,17 +295,23 @@ export default function App() {
     food: 'veg', accom: 'no', idPhoto: '', staffName: '', staffFood: 'veg'
   });
   const [showSignupWarning, setShowSignupWarning] = useState(false);
+  const [isSigningUp, setIsSigningUp] = useState(false);
 
-  const handleSignupSubmit = (e) => {
+  const handleSignupSubmit = async (e) => {
     e.preventDefault();
-    const success = registerUser(signupForm);
-    if (success) {
-      setLoginEmail(signupForm.email);
-      setAuthTab('login');
-      setSignupForm({
-        name: '', college: '', dept: '', phno: '', email: '', reno: '', password: '',
-        food: 'veg', accom: 'no', idPhoto: '', staffName: '', staffFood: 'veg'
-      });
+    setIsSigningUp(true);
+    try {
+      const success = await registerUser(signupForm);
+      if (success) {
+        setLoginEmail(signupForm.email);
+        setAuthTab('login');
+        setSignupForm({
+          name: '', college: '', dept: '', phno: '', email: '', reno: '', password: '',
+          food: 'veg', accom: 'no', idPhoto: '', staffName: '', staffFood: 'veg'
+        });
+      }
+    } finally {
+      setIsSigningUp(false);
     }
   };
 
@@ -337,22 +343,28 @@ export default function App() {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginRole, setLoginRole] = useState('student');
   const [authTab, setAuthTab] = useState('login');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    const success = loginUser(loginEmail, loginPassword, loginRole);
-    if (success) {
-      setLoginPassword('');
-      if (loginRole === 'student') {
-        setCurrentPage('student-dashboard');
-        setStudentTab('student-profile');
-      } else if (loginRole === 'admin') {
-        setCurrentPage('admin-dashboard');
-        setAdminTab('admin-stats');
-      } else if (loginRole === 'leader') {
-        setCurrentPage('leader-dashboard');
-        setLeaderTab('leader-participants');
+    setIsLoggingIn(true);
+    try {
+      const success = await loginUser(loginEmail, loginPassword, loginRole);
+      if (success) {
+        setLoginPassword('');
+        if (loginRole === 'student') {
+          setCurrentPage('student-dashboard');
+          setStudentTab('student-profile');
+        } else if (loginRole === 'admin') {
+          setCurrentPage('admin-dashboard');
+          setAdminTab('admin-stats');
+        } else if (loginRole === 'leader') {
+          setCurrentPage('leader-dashboard');
+          setLeaderTab('leader-participants');
+        }
       }
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -372,11 +384,11 @@ export default function App() {
     }
   };
 
-  const handleApplySubmit = (e) => {
+  const handleApplySubmit = async (e) => {
     e.preventDefault();
     if (!selectedEventId) return;
 
-    const success = applyForEvent(selectedEventId, teamName, teammateIds, eventStudentId);
+    const success = await applyForEvent(selectedEventId, teamName, teammateIds, eventStudentId);
     if (success) {
       setSelectedEventId('');
       setTeamName('');
@@ -402,13 +414,13 @@ export default function App() {
     }
   };
 
-  const handlePaymentSubmit = (e) => {
+  const handlePaymentSubmit = async (e) => {
     e.preventDefault();
     if (!paymentReceiptImg) {
       addToast("Receipt Required", "Please upload a screenshot of your payment transfer.", true);
       return;
     }
-    submitPayment(paymentAppId, paymentTxId, paymentReceiptImg);
+    await submitPayment(paymentAppId, paymentTxId, paymentReceiptImg);
     setPaymentAppId(null);
     setPaymentTxId('');
     setPaymentReceiptImg('');
@@ -421,9 +433,9 @@ export default function App() {
   };
 
   // Admin New Event Form Submit
-  const handleCreateEventSubmit = (e) => {
+  const handleCreateEventSubmit = async (e) => {
     e.preventDefault();
-    const success = addEvent(newEventForm);
+    const success = await addEvent(newEventForm);
     if (success) {
       setNewEventForm({
         id: '', title: '', desc: '', rules: '', maxTeammates: 0, venue: '', time: '', incharge: ''
@@ -432,9 +444,9 @@ export default function App() {
   };
 
   // Admin Broadcast Announcement Submit
-  const handleAnnouncementSubmit = (e) => {
+  const handleAnnouncementSubmit = async (e) => {
     e.preventDefault();
-    broadcastAnnouncement(announcementForm.title, announcementForm.body);
+    await broadcastAnnouncement(announcementForm.title, announcementForm.body);
     setAnnouncementForm({ title: '', body: '' });
   };
 
@@ -745,9 +757,12 @@ export default function App() {
                   <div className="form-group">
                     <label>Password</label>
                     <input type="password" className="form-control" placeholder="••••••••" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required />
-                    <span className="form-info-msg">Default Admin: AdminPassword123 | Default Leader: leader</span>
+                    <span className="form-info-msg" style={{ color: '#94a3b8', fontSize: '0.8rem' }}>Authorized fest personnel and registered external students only.</span>
                   </div>
-                  <button type="submit" className="btn-primary" style={{ width: '100%', padding: '12px', marginTop: '10px' }}>Sign In</button>
+                  <button type="submit" className="btn-primary" disabled={isLoggingIn} style={{ width: '100%', padding: '12px', marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    {isLoggingIn && <span className="btn-spinner"></span>}
+                    {isLoggingIn ? 'Signing In...' : 'Sign In'}
+                  </button>
                 </form>
               ) : (
                 <form className="auth-form" onSubmit={handleSignupSubmit}>
@@ -824,7 +839,10 @@ export default function App() {
                       </div>
                     </div>
                   </div>
-                  <button type="submit" className="btn-primary" style={{ width: '100%', padding: '12px', marginTop: '15px' }}>Register Account</button>
+                  <button type="submit" className="btn-primary" disabled={isSigningUp} style={{ width: '100%', padding: '12px', marginTop: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    {isSigningUp && <span className="btn-spinner"></span>}
+                    {isSigningUp ? 'Registering Account...' : 'Register Account'}
+                  </button>
                 </form>
               )}
             </div>
@@ -1786,8 +1804,8 @@ export default function App() {
 
       {/* Camera Scan Verification Popup Modal */}
       {scanVerifyData && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', zIndex: 2000, backdropFilter: 'blur(6px)' }}>
-          <div style={{ background: 'var(--panel-bg)', border: '2px solid var(--secondary-glow)', borderRadius: '25px', width: '100%', maxWidth: '480px', margin: '8% auto', padding: '30px', boxShadow: '0 0 30px rgba(0,204,255,0.3)', position: 'relative', textAlign: 'center' }}>
+        <div className="modal-overlay">
+          <div className="modal-content modal-scan-content">
             <h3 style={{ color: 'var(--secondary-glow)', marginBottom: '5px', fontWeight: 800, letterSpacing: '1px' }}>TICKET SCANNER VERIFICATION</h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>Please crosscheck the identity photo and database credentials below</p>
             
@@ -1813,8 +1831,8 @@ export default function App() {
 
       {/* Payment Proof Modal */}
       {paymentAppId && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', zIndex: 1000, backdropFilter: 'blur(5px)' }}>
-          <div style={{ background: 'var(--panel-bg)', border: '1px solid var(--border-glow)', borderRadius: '20px', width: '100%', maxWidth: '480px', margin: '8% auto', padding: '30px', boxShadow: 'var(--shadow)', position: 'relative' }}>
+        <div className="modal-overlay">
+          <div className="modal-content modal-payment-content">
             <span style={{ position: 'absolute', top: '15px', right: '20px', fontSize: '1.8rem', cursor: 'pointer', color: 'var(--text-secondary)' }} onClick={() => { setPaymentAppId(null); setPaymentReceiptImg(''); }}>&times;</span>
             
             <h3 style={{ marginBottom: '10px' }}>Submit Registration Payment</h3>

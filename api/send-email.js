@@ -5,8 +5,8 @@ dotenv.config();
 const SMTP_CONFIG = {
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.SMTP_PORT) || 465,
-  user: process.env.SMTP_USER || 'erenyeager6305@gmail.com',
-  pass: process.env.SMTP_PASS || 'kbgotbrtjmmlqsph'
+  user: process.env.SMTP_USER || '',
+  pass: process.env.SMTP_PASS || ''
 };
 
 export default async function handler(req, res) {
