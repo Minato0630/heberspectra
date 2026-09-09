@@ -27,6 +27,10 @@ app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
+  // Normalize req.url if Vercel rewrites stripped /api prefix
+  if (req.url && !req.url.startsWith('/api') && req.url !== '/' && !req.url.startsWith('/?')) {
+    req.url = '/api' + req.url;
+  }
   next();
 });
 

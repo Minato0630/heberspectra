@@ -587,13 +587,16 @@ export default function App() {
         {/* 1. HOME CATALOG */}
         {currentPage === 'home' && (
           <main className="page-section">
-            <div className="hero-video-wrapper">
-              <video autoPlay loop muted playsInline className="hero-video-bg" poster="/assets/bhc_campus_bg.jpg">
-                <source src="/assets/bhc_campus_video.webm" type="video/webm" />
-                <source src="https://bhc.edu.in/assets/home/bhc_intro_new.webm" type="video/webm" />
-              </video>
-              <div className="hero-overlay"></div>
-              <div className="hero" style={{ position: 'relative', zIndex: 2, background: 'transparent' }}>
+            <div className="hero">
+              <div className="hero-video-wrapper">
+                <video autoPlay loop muted playsInline className="hero-video-bg" poster="/assets/bhc_campus_bg.jpg">
+                  <source src="/assets/bhc_campus_video.webm" type="video/webm" />
+                  <source src="https://bhc.edu.in/assets/home/bhc_intro_new.webm" type="video/webm" />
+                </video>
+                <div className="hero-overlay"></div>
+              </div>
+
+              <div className="hero-content">
                 <div className="hero-dept" style={{ color: 'var(--secondary-glow)', fontWeight: 800, letterSpacing: '2px', fontSize: '0.9rem', marginBottom: '8px', textTransform: 'uppercase' }}>
                   DEPARTMENT OF COMPUTER SCIENCE (SHIFT II)
                 </div>
@@ -606,26 +609,35 @@ export default function App() {
                 
                 {/* Live Countdown Timer */}
                 <div className="countdown-container">
-                  <div className="countdown-title">
-                    {countdown.isEventStarted ? "🎉 FEST IS LIVE NOW!" : "⏳ COUNTDOWN TO HEBER SPECTRA 2026"}
+                  <div className="countdown-header">
+                    <span className={`countdown-badge ${countdown.isRegClosed ? 'closed' : ''}`}>
+                      {countdown.isRegClosed ? 'Registrations Closed' : 'Official Kickoff Timer'}
+                    </span>
+                    <div className="countdown-title">
+                      {countdown.isEventStarted ? "🎉 FEST IS LIVE NOW!" : "⏳ COUNTDOWN TO HEBER SPECTRA 2026"}
+                    </div>
                   </div>
+
                   {!countdown.isEventStarted && (
                     <div className="countdown-grid">
                       <div className="countdown-card">
-                        <div className="countdown-number">{countdown.days}</div>
-                        <div className="countdown-label">Days</div>
+                        <div className="countdown-val">{countdown.days}</div>
+                        <div className="countdown-lbl">Days</div>
                       </div>
+                      <div className="countdown-colon">:</div>
                       <div className="countdown-card">
-                        <div className="countdown-number">{countdown.hours}</div>
-                        <div className="countdown-label">Hours</div>
+                        <div className="countdown-val">{countdown.hours}</div>
+                        <div className="countdown-lbl">Hours</div>
                       </div>
+                      <div className="countdown-colon">:</div>
                       <div className="countdown-card">
-                        <div className="countdown-number">{countdown.minutes}</div>
-                        <div className="countdown-label">Minutes</div>
+                        <div className="countdown-val">{countdown.minutes}</div>
+                        <div className="countdown-lbl">Minutes</div>
                       </div>
+                      <div className="countdown-colon">:</div>
                       <div className="countdown-card">
-                        <div className="countdown-number">{countdown.seconds}</div>
-                        <div className="countdown-label">Seconds</div>
+                        <div className="countdown-val">{countdown.seconds}</div>
+                        <div className="countdown-lbl">Seconds</div>
                       </div>
                     </div>
                   )}
