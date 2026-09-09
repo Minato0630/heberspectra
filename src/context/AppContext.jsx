@@ -226,8 +226,9 @@ export const AppProvider = ({ children }) => {
 
       if (data.success && data.token) {
         sessionStorage.setItem("spectra_token", data.token);
+        const resolvedRole = data.user?.role || roleType;
         const session = {
-          role: roleType,
+          role: resolvedRole,
           details: data.user,
           name: data.user.name || username,
           eventId: data.user.eventId,
@@ -237,7 +238,7 @@ export const AppProvider = ({ children }) => {
         setCurrentSession(session);
         addToast("Welcome Back!", `Signed in successfully as ${session.name}.`);
         await refreshRoleData(session);
-        return true;
+        return resolvedRole;
       } else {
         const msg = data.error?.message || "Invalid credentials.";
         addToast("Login Failed", msg, true);

@@ -349,16 +349,17 @@ export default function App() {
     e.preventDefault();
     setIsLoggingIn(true);
     try {
-      const success = await loginUser(loginEmail, loginPassword, loginRole);
-      if (success) {
+      const userRole = await loginUser(loginEmail, loginPassword, loginRole);
+      if (userRole) {
+        const effectiveRole = typeof userRole === 'string' ? userRole : loginRole;
         setLoginPassword('');
-        if (loginRole === 'student') {
+        if (effectiveRole === 'student') {
           setCurrentPage('student-dashboard');
           setStudentTab('student-profile');
-        } else if (loginRole === 'admin') {
+        } else if (effectiveRole === 'admin') {
           setCurrentPage('admin-dashboard');
           setAdminTab('admin-stats');
-        } else if (loginRole === 'leader') {
+        } else if (effectiveRole === 'leader') {
           setCurrentPage('leader-dashboard');
           setLeaderTab('leader-participants');
         }
@@ -764,12 +765,44 @@ export default function App() {
                   </div>
                   <div className="form-group">
                     <label>Email / Student ID / Role Username</label>
-                    <input type="text" className="form-control" placeholder="john@student.com, BHC-STU-1001 or president" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required />
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      placeholder="john@student.com, BHC-STU-1001 or president" 
+                      value={loginEmail} 
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setLoginEmail(val);
+                        const lower = val.trim().toLowerCase();
+                        if (['president', 'vicepresident', 'manager', 'admin', 'administrator'].includes(lower)) {
+                          setLoginRole('admin');
+                        } else if (lower.startsWith('leader_')) {
+                          setLoginRole('leader');
+                        }
+                      }} 
+                      required 
+                    />
                   </div>
                   <div className="form-group">
                     <label>Password</label>
                     <input type="password" className="form-control" placeholder="••••••••" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required />
-                    <span className="form-info-msg" style={{ color: '#94a3b8', fontSize: '0.8rem' }}>Authorized fest personnel and registered external students only.</span>
+                    <div style={{
+                      marginTop: '8px',
+                      padding: '10px 12px',
+                      background: 'rgba(56, 189, 248, 0.08)',
+                      border: '1px solid rgba(56, 189, 248, 0.25)',
+                      borderRadius: '8px',
+                      fontSize: '0.8rem',
+                      lineHeight: '1.45',
+                      color: 'var(--text-secondary)'
+                    }}>
+                      <div style={{ color: 'var(--secondary-glow)', fontWeight: '600', marginBottom: '3px' }}>
+                        🔑 System Access Credentials:
+                      </div>
+                      <div>👑 <strong>Admin:</strong> <code>president</code> (or <code>admin</code>) &nbsp;|&nbsp; Pass: <code>AdminPassword123</code></div>
+                      <div>🎯 <strong>Leader:</strong> <code>leader_hackathon</code> &nbsp;|&nbsp; Pass: <code>leader</code></div>
+                      <div>🎓 <strong>Student:</strong> your registered email / ID &amp; password</div>
+                    </div>
                   </div>
                   <button type="submit" className="btn-primary" disabled={isLoggingIn} style={{ width: '100%', padding: '12px', marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                     {isLoggingIn && <span className="btn-spinner"></span>}
