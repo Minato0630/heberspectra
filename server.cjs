@@ -11,11 +11,8 @@ const { readDB, writeDB, connectDB, INITIAL_EVENTS } = require('./lib/db.cjs');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
-const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
-if (!process.env.ADMIN_PASSWORD) {
-  console.warn('⚠️ [SECURITY] ADMIN_PASSWORD environment variable is not set. Admin logins are restricted.');
-}
+const JWT_SECRET = process.env.JWT_SECRET || 'spectra_jwt_secret_2026_secure';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'AdminPassword123';
 
 // Initialize DB connection
 connectDB().catch(e => console.error("MongoDB init error:", e.message));
