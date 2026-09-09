@@ -27,6 +27,8 @@ dist-ssr
 .env
 .env*.local
 pass.txt
+password.txt
+*password*.txt
 
 # System artifacts
 %APPDATA%/
